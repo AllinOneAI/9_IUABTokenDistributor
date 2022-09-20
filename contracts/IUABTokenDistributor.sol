@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.17;
 
-// https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.0.0/contracts/token/ERC20/IERC20.sol
 interface IERC20 {
     function totalSupply() external view returns (uint256);
 
@@ -18,7 +17,36 @@ interface IERC20 {
         address recipient,
         uint256 amount
     ) external returns (bool);
+}
 
-    event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+contract IUABTokenDistrubutor {
+	IERC20 IUAB = IERC20(0xAd259e17436b4440B398De3DE99AC7A25eEfa399);
+
+	address[] public owners;
+	mapping(address => bool) isOwner;
+
+	constructor(
+		address[] memory _owners,
+        address _iuabAddress	
+	){
+		require(_owners.length > 0, "there must be at least 1 owner");
+        
+        for (uint8 i = 0; i < _owners.length; i++) {
+            require(_owners[i] != address(0), "owner can't be a 0 address");
+            require(!isOwner[_owners[i]], "only unique owners");
+            isOwner[_owners[i]] = true;
+            owners.push(_owners[i]);
+		}
+		IUAB = IERC20(_iuabAddress);
+	}
+
+	modifier onlyOwner() {
+        require(isOwner[msg.sender], "you're not a owner of the wallet");
+        _;
+    }
+
+    function getToken(uint256 _ammount) external onlyOwner {
+    	require(IUAB.balanceOf(address(this)) >= _ammount, "not enough tokens");
+    	IUAB.transfer(msg.sender, _ammount);
+    }
 }
